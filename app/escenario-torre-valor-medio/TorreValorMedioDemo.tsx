@@ -133,21 +133,43 @@ function TorreValorMedioDemo() {
     }
   }, [funcionActual, limiteA, limiteB, estimacionUsuario, puntoCReal, escenario, renderizarCompleto, estaRenderizando])
 
-  // ✅ INICIALIZAR RENDERIZADOR DE TEORÍA
+  // ✅ INICIALIZAR RENDERIZADOR DE TEORÍA CUANDO EL REF ESTÉ DISPONIBLE
   useEffect(() => {
-    if (containerTooltipRef.current) {
+    console.log('🔄 Verificando disponibilidad del containerTooltipRef...')
+    console.log('- containerTooltipRef.current:', containerTooltipRef.current)
+    console.log('- renderizadorTeoria actual:', !!renderizadorTeoria)
+    console.log('- tabActivo:', tabActivo)
+    
+    // Solo inicializar si estamos en la pestaña de teoría y el contenedor está disponible
+    if (tabActivo === 'teoria' && containerTooltipRef.current && !renderizadorTeoria) {
+      console.log('✅ Creando RenderizadorTeoria...')
       const renderizador = new RenderizadorTeoria(containerTooltipRef.current)
       setRenderizadorTeoria(renderizador)
+      console.log('✅ RenderizadorTeoria creado:', renderizador)
     }
-  }, [])
+  }, [containerTooltipRef.current, renderizadorTeoria, tabActivo])
 
-  // ✅ RENDERIZAR TEORÍA CUANDO SE CAMBIE A LA PESTAÑA
+  // ✅ RENDERIZAR TEORÍA CUANDO SE CAMBIE A LA PESTAÑA Y EL RENDERIZADOR ESTÉ LISTO
   useEffect(() => {
+    console.log('🔄 useEffect de renderizado de teoría ejecutado:', { tabActivo, renderizadorTeoria: !!renderizadorTeoria, escenario: !!escenario })
+    
     if (tabActivo === 'teoria' && renderizadorTeoria && escenario) {
+      console.log('📚 Intentando obtener información del teorema para renderizar...')
       const informacionTeorema = obtenerInformacionTeorema()
+      console.log('📚 Información del teorema:', informacionTeorema)
+      
       if (informacionTeorema) {
+        console.log('✅ Renderizando teoría...')
         renderizadorTeoria.renderizarTeoria(informacionTeorema)
+      } else {
+        console.log('⚠️ No se encontró información del teorema para renderizar')
       }
+    } else if (tabActivo !== 'teoria' && renderizadorTeoria) {
+      // Limpiar el renderizador cuando se cambie de pestaña
+      console.log('🧹 Limpiando renderizador de teoría al cambiar de pestaña')
+      setRenderizadorTeoria(null)
+    } else {
+      console.log('❌ Condiciones no cumplidas para renderizar teoría (tab, renderizador o escenario no listos)')
     }
   }, [tabActivo, renderizadorTeoria, escenario, obtenerInformacionTeorema])
 
@@ -321,9 +343,27 @@ function TorreValorMedioDemo() {
   
   // ✅ MANEJAR CARGA DE EJEMPLO
   const handleCargarEjemplo = useCallback((ejemplo: any) => {
+    console.log('📚 Cargando ejemplo:', ejemplo)
     cargarEjemplo(ejemplo)
     console.log(`📚 Ejemplo cargado: ${ejemplo.titulo}`)
-  }, [cargarEjemplo])
+    
+    // Redirigir automáticamente a Visualizaciones después de cargar el ejemplo
+    setTimeout(() => {
+      setTabActivo('visualizacion')
+      console.log('🎯 Redirigiendo a Visualizaciones después de cargar ejemplo')
+    }, 200)
+    
+    // Forzar actualización del estado después de cargar el ejemplo
+    setTimeout(() => {
+      if (escenario) {
+        const nuevoEstado = escenario.obtenerEstado()
+        console.log('🔄 Estado después de cargar ejemplo:')
+        console.log('- Función:', nuevoEstado.obtenerTipoFuncion())
+        console.log('- Límites:', nuevoEstado.obtenerLimites())
+        console.log('- Ejemplo actual:', nuevoEstado.ejemploActual)
+      }
+    }, 100)
+  }, [cargarEjemplo, escenario])
   
   // ✅ MANEJAR RESET
   const handleReset = useCallback(() => {

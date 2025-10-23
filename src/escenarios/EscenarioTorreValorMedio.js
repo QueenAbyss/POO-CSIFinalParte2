@@ -325,13 +325,31 @@ export class EscenarioTorreValorMedio extends Escenario {
 
     // ✅ OBTENER INFORMACIÓN DEL TEOREMA
     obtenerInformacionTeorema() {
+        console.log('📚 Obteniendo información del teorema...')
+        console.log('- GestorTeoria:', this.gestorTeoria)
+        
+        if (!this.gestorTeoria) {
+            console.error('❌ GestorTeoria no está inicializado')
+            return null
+        }
+        
         const teoria = this.gestorTeoria.obtenerTeoria('torreValorMedio')
+        console.log('- Teoría obtenida:', teoria)
+        
+        if (!teoria) {
+            console.error('❌ No se encontró la teoría torreValorMedio')
+            return null
+        }
+        
         const limites = this.estadoTorre.obtenerLimites()
         const funcion = this.estadoTorre.obtenerFuncion()
         const alturaPromedio = this.estadoTorre.obtenerAlturaPromedio()
         
+        const informacionCompleta = teoria.obtenerInformacionCompleta()
+        console.log('- Información completa:', informacionCompleta)
+        
         return {
-            ...teoria.obtenerInformacionCompleta(),
+            ...informacionCompleta,
             datosDinamicos: {
                 limites: limites,
                 alturaPromedio: alturaPromedio,
