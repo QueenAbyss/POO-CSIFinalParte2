@@ -455,7 +455,7 @@ function TorreValorMedioDemo() {
               
               {/* Pestaña de Teoría del Valor Medio */}
               <TabsContent value="teoria" className="space-y-6">
-                <div ref={containerTooltipRef} className="min-h-[600px]">
+                <div ref={containerTooltipRef} className="min-h-[600px] bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200 shadow-sm">
                   {/* El contenido se renderiza dinámicamente por RenderizadorTeoria.js */}
                 </div>
               </TabsContent>
