@@ -66,6 +66,12 @@ function TorreValorMedioDemo() {
     logros,
     logrosDesbloqueados,
     
+    // Setters para actualización manual
+    setEstimacionUsuario,
+    setPuntoCReal,
+    setErrorEstimacion,
+    setVerificacionExitosa,
+    
     // Métodos
     establecerFuncion,
     establecerLimites,
@@ -239,9 +245,22 @@ function TorreValorMedioDemo() {
         // Forzar actualización del estado después de la verificación
         setTimeout(() => {
           if (escenario) {
+            // Forzar actualización del estado del escenario
             const nuevoEstado = escenario.obtenerEstado()
-            // Los estados se actualizarán automáticamente a través del useEffect
-            console.log('🔄 Estado actualizado después de verificación')
+            console.log('🔄 Estado después de verificación:')
+            console.log('- Estimación usuario:', nuevoEstado.obtenerEstimacionUsuario())
+            console.log('- Punto c real:', nuevoEstado.obtenerPuntoCReal())
+            console.log('- Error estimación:', nuevoEstado.obtenerErrorEstimacion())
+            console.log('- Verificación exitosa:', nuevoEstado.obtenerVerificacionExitosa())
+            
+            // Actualizar manualmente el estado del componente
+            setEstimacionUsuario(nuevoEstado.obtenerEstimacionUsuario())
+            setPuntoCReal(nuevoEstado.obtenerPuntoCReal())
+            setErrorEstimacion(nuevoEstado.obtenerErrorEstimacion())
+            setVerificacionExitosa(nuevoEstado.obtenerVerificacionExitosa())
+            
+            // Forzar renderizado para actualizar la UI
+            renderizarCompleto()
           }
         }, 100)
         
@@ -858,6 +877,13 @@ function TorreValorMedioDemo() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
+                        {/* Debug info */}
+                        {console.log('🔍 Valores en resultados:', {
+                          estimacionUsuario,
+                          puntoCReal,
+                          errorEstimacion,
+                          verificacionExitosa
+                        })}
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
                             <span className="font-medium">Tu estimación:</span>

@@ -428,6 +428,12 @@ export const useTorreValorMedio = (): TorreValorMedioState => {
     logros,
     logrosDesbloqueados,
     
+    // Setters para actualización manual
+    setEstimacionUsuario,
+    setPuntoCReal,
+    setErrorEstimacion,
+    setVerificacionExitosa,
+    
     // Métodos
     establecerFuncion,
     establecerLimites,
