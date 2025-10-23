@@ -7,6 +7,9 @@ import { RenderizadorTeoria } from '../../src/presentacion/RenderizadorTeoria.js
 import { FunctionValidator } from '../../src/servicios/FunctionValidator.js'
 import { FunctionScaler } from '../../src/servicios/FunctionScaler.js'
 import { CustomFunctionManager } from '../../src/servicios/CustomFunctionManager.js'
+import { StepVisibilityManager } from '../../src/servicios/StepVisibilityManager.js'
+import { StepAdvancementLogic } from '../../src/servicios/StepAdvancementLogic.js'
+import { SequentialStepsSection } from './SequentialStepsSection'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -119,6 +122,18 @@ function TorreValorMedioDemo() {
   const [errorFuncionPersonalizadaSegundoTeorema, setErrorFuncionPersonalizadaSegundoTeorema] = useState('')
   const [mostrarTecladoSegundoTeorema, setMostrarTecladoSegundoTeorema] = useState(false)
   
+  // Estado para el sistema de pasos secuenciales
+  const [stepManager, setStepManager] = useState<StepVisibilityManager | null>(null)
+  const [stepLogic, setStepLogic] = useState<StepAdvancementLogic | null>(null)
+  const [currentStep, setCurrentStep] = useState(1)
+  const [stepData, setStepData] = useState({
+    function: '',
+    antiderivative: '',
+    fA: '',
+    fB: '',
+    result: 0
+  })
+  
   // Estado para función personalizada
   const [mostrarTeclado, setMostrarTeclado] = useState(false)
   const [cursorPosicion, setCursorPosicion] = useState(0)
@@ -177,6 +192,28 @@ function TorreValorMedioDemo() {
       }
     }
   }, [escenario, teoremaActivo, tabActivo, funcionSegundoTeorema, limiteASegundoTeorema, limiteBSegundoTeorema, funcionPersonalizadaSegundoTeorema])
+
+  // ✅ INICIALIZAR SISTEMA DE PASOS SECUENCIALES
+  useEffect(() => {
+    if (teoremaActivo === 'segundo-teorema' && tabActivo === 'visualizacion') {
+      console.log('🎯 Inicializando sistema de pasos secuenciales')
+      
+      // Inicializar gestores de pasos
+      const manager = new StepVisibilityManager()
+      const logic = new StepAdvancementLogic()
+      
+      setStepManager(manager)
+      setStepLogic(logic)
+      setCurrentStep(1)
+      
+      // Configurar visibilidad inicial (solo paso 1 visible)
+      setTimeout(() => {
+        manager.initializeStepVisibility()
+      }, 100)
+      
+      console.log('✅ Sistema de pasos secuenciales inicializado')
+    }
+  }, [teoremaActivo, tabActivo])
 
   // ✅ RENDERIZAR CUANDO CAMBIEN LOS PARÁMETROS
   useEffect(() => {
@@ -589,11 +626,146 @@ function TorreValorMedioDemo() {
       setPasoActualSegundoTeorema(1)
       setErrorAntiderivada('')
       setErrorEvaluacion('')
+      
+      // Resetear sistema de pasos secuenciales
+      if (stepLogic) {
+        stepLogic.resetProcess()
+        setCurrentStep(1)
+        setStepData({
+          function: '',
+          antiderivative: '',
+          fA: '',
+          fB: '',
+          result: 0
+        })
+      }
     }
-  }, [escenario])
+  }, [escenario, stepLogic])
+
+  // ✅ MANEJAR PROCESAMIENTO DE PASOS SECUENCIALES
+  const handleStepInput = useCallback((stepNumber: number, input: string) => {
+    if (stepLogic) {
+      console.log(`🔄 Procesando entrada del paso ${stepNumber}: "${input}"`)
+      
+      const result = stepLogic.processStepCompletion(stepNumber, input)
+      
+      if (result.success) {
+        console.log(`✅ Paso ${stepNumber} completado exitosamente`)
+        
+        // Actualizar datos del paso
+        setStepData(prev => ({
+          ...prev,
+          ...(stepNumber === 1 && { function: input }),
+          ...(stepNumber === 2 && { antiderivative: input }),
+          ...(stepNumber === 3 && { 
+            fA: stepData.fA === '' ? input : stepData.fA,
+            fB: stepData.fA !== '' ? input : stepData.fB
+          })
+        }))
+        
+        // Actualizar paso actual
+        setCurrentStep(stepNumber + 1)
+        
+        // Si es el último paso, mostrar resultado
+        if (stepNumber === 3) {
+          const finalResult = stepLogic.getCurrentState().userData.result
+          setResultadoIntegral(finalResult)
+        }
+      } else {
+        console.log(`❌ Error en paso ${stepNumber}: ${result.error}`)
+      }
+    }
+  }, [stepLogic, stepData])
+
+  // ✅ MANEJAR ENTRADA DE FUNCIÓN PERSONALIZADA
+  const handleCustomFunctionInput = useCallback((input: string) => {
+    setFuncionPersonalizadaSegundoTeorema(input)
+    setErrorFuncionPersonalizadaSegundoTeorema('')
+    
+    // Validar función personalizada
+    try {
+      const testFunc = new Function('x', `return ${input}`)
+      const testValue = testFunc(1)
+      
+      if (isNaN(testValue) || !isFinite(testValue)) {
+        setErrorFuncionPersonalizadaSegundoTeorema('La función debe producir valores numéricos finitos')
+        return
+      }
+      
+      // Función válida, procesar como paso 1
+      handleStepInput(1, input)
+      
+    } catch (error) {
+      setErrorFuncionPersonalizadaSegundoTeorema('Sintaxis de función inválida')
+    }
+  }, [handleStepInput])
+
+  // ✅ MANEJAR ENTRADA DE ANTIDERIVADA
+  const handleAntiderivativeInput = useCallback((input: string) => {
+    setAntiderivadaUsuario(input)
+    setErrorAntiderivada('')
+    
+    // Procesar como paso 2
+    handleStepInput(2, input)
+  }, [handleStepInput])
+
+  // ✅ MANEJAR ENTRADA DE EVALUACIÓN EN LÍMITES
+  const handleLimitEvaluationInput = useCallback((input: string, type: 'fA' | 'fB') => {
+    if (type === 'fA') {
+      setEvaluacionA(input)
+    } else {
+      setEvaluacionB(input)
+    }
+    
+    setErrorEvaluacion('')
+    
+    // Procesar como paso 3
+    handleStepInput(3, input)
+  }, [handleStepInput])
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 p-4">
+      <style jsx>{`
+        .step-container {
+          display: none;
+          padding: 20px;
+          border: 2px solid #e0e0e0;
+          border-radius: 8px;
+          margin: 10px 0;
+          background-color: #f9f9f9;
+        }
+        
+        .step-container.active {
+          display: block;
+          border-color: #4CAF50;
+          background-color: #f0fff0;
+        }
+        
+        .feedback {
+          display: none;
+          padding: 10px;
+          border-radius: 4px;
+          margin-top: 10px;
+        }
+        
+        .feedback.success {
+          background-color: #d4edda;
+          color: #155724;
+          border: 1px solid #c3e6cb;
+        }
+        
+        .feedback.error {
+          background-color: #f8d7da;
+          color: #721c24;
+          border: 1px solid #f5c6cb;
+        }
+        
+        .feedback.info {
+          background-color: #d1ecf1;
+          color: #0c5460;
+          border: 1px solid #bee5eb;
+        }
+      `}</style>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
@@ -1265,7 +1437,30 @@ function TorreValorMedioDemo() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Panel de Controles del Segundo Teorema */}
                   <div className="space-y-4">
-                    {/* Controles Interactivos */}
+                    <SequentialStepsSection
+                      funcionSegundoTeorema={funcionSegundoTeorema}
+                      limiteASegundoTeorema={limiteASegundoTeorema}
+                      limiteBSegundoTeorema={limiteBSegundoTeorema}
+                      funcionPersonalizadaSegundoTeorema={funcionPersonalizadaSegundoTeorema}
+                      antiderivadaUsuario={antiderivadaUsuario}
+                      evaluacionA={evaluacionA}
+                      evaluacionB={evaluacionB}
+                      resultadoIntegral={resultadoIntegral}
+                      errorFuncionPersonalizadaSegundoTeorema={errorFuncionPersonalizadaSegundoTeorema}
+                      errorAntiderivada={errorAntiderivada}
+                      errorEvaluacion={errorEvaluacion}
+                      mostrarTecladoSegundoTeorema={mostrarTecladoSegundoTeorema}
+                      handleCustomFunctionInput={handleCustomFunctionInput}
+                      handleAntiderivativeInput={handleAntiderivativeInput}
+                      handleLimitEvaluationInput={handleLimitEvaluationInput}
+                      handleResetearSegundoTeorema={handleResetearSegundoTeorema}
+                      setMostrarTecladoSegundoTeorema={setMostrarTecladoSegundoTeorema}
+                      setFuncionPersonalizadaSegundoTeorema={setFuncionPersonalizadaSegundoTeorema}
+                      setAntiderivadaUsuario={setAntiderivadaUsuario}
+                      setEvaluacionA={setEvaluacionA}
+                      setEvaluacionB={setEvaluacionB}
+                    />
+                  </div>
                     <Card>
                       <CardHeader>
                         <CardTitle className="text-lg">Controles del Segundo Teorema</CardTitle>
