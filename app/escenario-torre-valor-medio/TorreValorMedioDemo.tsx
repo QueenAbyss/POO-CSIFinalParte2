@@ -108,9 +108,16 @@ function TorreValorMedioDemo() {
   // ✅ CONFIGURAR CANVAS AL MONTAR
   useEffect(() => {
     if (canvasTorreRef.current && canvasCartesianoRef.current) {
-      configurarCanvas(canvasTorreRef.current, canvasCartesianoRef.current)
+      // Pequeño delay para asegurar que los canvas estén completamente renderizados
+      setTimeout(() => {
+        configurarCanvas(canvasTorreRef.current, canvasCartesianoRef.current)
+        // Forzar renderizado inicial
+        setTimeout(() => {
+          renderizarCompleto()
+        }, 100)
+      }, 100)
     }
-  }, [configurarCanvas])
+  }, [configurarCanvas, renderizarCompleto])
 
   // ✅ RENDERIZAR CUANDO CAMBIEN LOS PARÁMETROS
   useEffect(() => {
@@ -142,10 +149,17 @@ function TorreValorMedioDemo() {
     if (tabActivo === 'visualizacion' && escenario && !estaRenderizando) {
       // Pequeño delay para asegurar que los canvas estén listos
       setTimeout(() => {
-        renderizarCompleto()
+        // Reconfigurar canvas para asegurar dimensiones correctas
+        if (canvasTorreRef.current && canvasCartesianoRef.current) {
+          configurarCanvas(canvasTorreRef.current, canvasCartesianoRef.current)
+        }
+        // Renderizar después de reconfigurar
+        setTimeout(() => {
+          renderizarCompleto()
+        }, 50)
       }, 100)
     }
-  }, [tabActivo, escenario, renderizarCompleto, estaRenderizando])
+  }, [tabActivo, escenario, renderizarCompleto, estaRenderizando, configurarCanvas])
   
   // ✅ ACTUALIZAR TIEMPO TRANSCURRIDO
   useEffect(() => {
@@ -172,18 +186,26 @@ function TorreValorMedioDemo() {
   
   // ✅ MANEJAR CLICK EN TORRE
   const handleClickTorre = useCallback((evento: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!estaBloqueado && !hasVerified) {
+    // Solo permitir clicks si no se ha verificado aún
+    if (!hasVerified) {
       const x = manejarClickTorre(evento.nativeEvent)
       if (x !== null) {
-        startEstimation(x)
+        if (isEstimating) {
+          updateEstimation(x)
+        } else {
+          startEstimation(x)
+        }
         console.log(`🎯 Estimación colocada en torre: ${x}`)
       }
+    } else {
+      console.log('⚠️ No se puede reposicionar después de verificar. Usa "Intentar de nuevo"')
     }
-  }, [manejarClickTorre, estaBloqueado, hasVerified, startEstimation])
+  }, [manejarClickTorre, hasVerified, isEstimating, startEstimation, updateEstimation])
   
   // ✅ MANEJAR CLICK EN CARTESIANO
   const handleClickCartesiano = useCallback((evento: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!estaBloqueado && !hasVerified) {
+    // Solo permitir clicks si no se ha verificado aún
+    if (!hasVerified) {
       const x = manejarClickCartesiano(evento.nativeEvent)
       if (x !== null) {
         if (isEstimating) {
@@ -193,8 +215,10 @@ function TorreValorMedioDemo() {
         }
         console.log(`🎯 Estimación colocada en cartesiano: ${x}`)
       }
+    } else {
+      console.log('⚠️ No se puede reposicionar después de verificar. Usa "Intentar de nuevo"')
     }
-  }, [manejarClickCartesiano, estaBloqueado, hasVerified, isEstimating, startEstimation, updateEstimation])
+  }, [manejarClickCartesiano, hasVerified, isEstimating, startEstimation, updateEstimation])
   
   // ✅ MANEJAR HOVER
   const handleHover = useCallback((evento: React.MouseEvent<HTMLCanvasElement>, tipoCanvas: string) => {
@@ -208,6 +232,8 @@ function TorreValorMedioDemo() {
       const puntoC = calcularPuntoCReal()
       if (puntoC !== null) {
         const exitosa = verificarEstimacion()
+        // Marcar como verificado para bloquear reposicionamiento
+        verifyEstimation()
         console.log(`✅ Verificación: ${exitosa ? 'Exitosa' : 'Fallida'}`)
         
         // Verificar logros después de la verificación
@@ -217,7 +243,7 @@ function TorreValorMedioDemo() {
         }
       }
     }
-  }, [estimacionUsuario, calcularPuntoCReal, verificarEstimacion, verificarLogros])
+  }, [estimacionUsuario, calcularPuntoCReal, verificarEstimacion, verifyEstimation, verificarLogros])
 
   // ✅ MANEJAR FUNCIÓN PERSONALIZADA
   const handleFuncionPersonalizada = useCallback((func: string) => {
@@ -596,21 +622,38 @@ function TorreValorMedioDemo() {
                       <strong>Paso 1:</strong> Haz clic en la gráfica o torre para colocar tu estimación de c.
                     </div>
                     
-                    {/* Botón de debug para renderizar */}
-                    <Button
-                      onClick={() => {
-                        console.log('🔄 Forzando renderizado...')
-                        console.log('Escenario:', escenario)
-                        console.log('Canvas Torre:', canvasTorreRef.current)
-                        console.log('Canvas Cartesiano:', canvasCartesianoRef.current)
-                        renderizarCompleto()
-                      }}
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                    >
-                      🔄 Forzar Renderizado
-                    </Button>
+                    {/* Botones de control */}
+                    <div className="space-y-2">
+                      <Button
+                        onClick={() => {
+                          console.log('🔄 Forzando renderizado...')
+                          console.log('Escenario:', escenario)
+                          console.log('Canvas Torre:', canvasTorreRef.current)
+                          console.log('Canvas Cartesiano:', canvasCartesianoRef.current)
+                          renderizarCompleto()
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                      >
+                        🔄 Forzar Renderizado
+                      </Button>
+                      
+                      <Button
+                        onClick={() => {
+                          resetEstimation()
+                          // También resetear el escenario para limpiar el punto c real
+                          resetear()
+                          console.log('🔄 Estimación reseteada - puedes reposicionar')
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        disabled={!isEstimating && !hasVerified}
+                      >
+                        🎯 Reposicionar Punto
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
                 
@@ -704,7 +747,8 @@ function TorreValorMedioDemo() {
                         style={{ 
                           background: 'linear-gradient(180deg, #D1C4E9 0%, #F8BBD0 100%)',
                           width: '100%',
-                          height: '320px'
+                          height: '320px',
+                          display: 'block'
                         }}
                         width={800}
                         height={320}
@@ -735,7 +779,8 @@ function TorreValorMedioDemo() {
                         className="w-full h-80 border rounded-lg cursor-crosshair bg-white"
                         style={{ 
                           width: '100%',
-                          height: '320px'
+                          height: '320px',
+                          display: 'block'
                         }}
                         width={800}
                         height={320}
@@ -758,7 +803,12 @@ function TorreValorMedioDemo() {
                         {estaVerificando ? 'Buscando c...' : 'Buscar c'}
                       </Button>
                       <Button
-                        onClick={resetEstimation}
+                        onClick={() => {
+                          resetEstimation()
+                          // También resetear el escenario para limpiar el punto c real
+                          resetear()
+                          console.log('🔄 Estimación reseteada - puedes reposicionar')
+                        }}
                         variant="outline"
                         disabled={estimacionUsuario === null}
                       >
@@ -768,7 +818,7 @@ function TorreValorMedioDemo() {
                     </div>
                     
                     {/* Indicadores de estado */}
-                    {isEstimating && (
+                    {isEstimating && !hasVerified && (
                       <div className="mt-2 text-sm text-blue-600">
                         Estimando c... Haz clic para reposicionar (Intento {attempts})
                       </div>
@@ -776,7 +826,13 @@ function TorreValorMedioDemo() {
                     
                     {hasVerified && (
                       <div className="mt-2 text-sm text-green-600">
-                        c verificado
+                        ✅ c verificado - Usa "Intentar de nuevo" para reposicionar
+                      </div>
+                    )}
+                    
+                    {!isEstimating && !hasVerified && estimacionUsuario !== null && (
+                      <div className="mt-2 text-sm text-orange-600">
+                        ⚠️ Estimación colocada - Haz clic en "Buscar c" para verificar
                       </div>
                     )}
                   </CardContent>
