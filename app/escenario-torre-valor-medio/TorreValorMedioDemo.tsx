@@ -30,6 +30,7 @@ function TorreValorMedioDemo() {
   // Referencias a los canvas
   const canvasTorreRef = useRef<HTMLCanvasElement>(null)
   const canvasCartesianoRef = useRef<HTMLCanvasElement>(null)
+  const canvasSegundoTeoremaRef = useRef<HTMLCanvasElement>(null)
   
   // Hook para manejo de estimación
   const { userEstimateC, isEstimating, hasVerified, attempts, startEstimation, updateEstimation, verifyEstimation, resetEstimation } = useEstimation()
@@ -101,6 +102,23 @@ function TorreValorMedioDemo() {
   const [tiempoTranscurrido, setTiempoTranscurrido] = useState(0)
   const [renderizadorTeoria, setRenderizadorTeoria] = useState<RenderizadorTeoria | null>(null)
   
+  // Estado para el Segundo Teorema
+  const [funcionSegundoTeorema, setFuncionSegundoTeorema] = useState('seno')
+  const [limiteASegundoTeorema, setLimiteASegundoTeorema] = useState(0)
+  const [limiteBSegundoTeorema, setLimiteBSegundoTeorema] = useState(2)
+  const [antiderivadaUsuario, setAntiderivadaUsuario] = useState('')
+  const [evaluacionA, setEvaluacionA] = useState('')
+  const [evaluacionB, setEvaluacionB] = useState('')
+  const [resultadoIntegral, setResultadoIntegral] = useState(0)
+  const [pasoActualSegundoTeorema, setPasoActualSegundoTeorema] = useState(1)
+  const [errorAntiderivada, setErrorAntiderivada] = useState('')
+  const [errorEvaluacion, setErrorEvaluacion] = useState('')
+  
+  // Estado para función personalizada del Segundo Teorema
+  const [funcionPersonalizadaSegundoTeorema, setFuncionPersonalizadaSegundoTeorema] = useState('')
+  const [errorFuncionPersonalizadaSegundoTeorema, setErrorFuncionPersonalizadaSegundoTeorema] = useState('')
+  const [mostrarTecladoSegundoTeorema, setMostrarTecladoSegundoTeorema] = useState(false)
+  
   // Estado para función personalizada
   const [mostrarTeclado, setMostrarTeclado] = useState(false)
   const [cursorPosicion, setCursorPosicion] = useState(0)
@@ -116,7 +134,7 @@ function TorreValorMedioDemo() {
     if (canvasTorreRef.current && canvasCartesianoRef.current) {
       // Pequeño delay para asegurar que los canvas estén completamente renderizados
       setTimeout(() => {
-        configurarCanvas(canvasTorreRef.current, canvasCartesianoRef.current)
+      configurarCanvas(canvasTorreRef.current, canvasCartesianoRef.current)
         // Forzar renderizado inicial
         setTimeout(() => {
           renderizarCompleto()
@@ -124,6 +142,41 @@ function TorreValorMedioDemo() {
       }, 100)
     }
   }, [configurarCanvas, renderizarCompleto])
+
+  // ✅ CONFIGURAR CANVAS SEGUNDO TEOREMA
+  useEffect(() => {
+    if (canvasSegundoTeoremaRef.current && escenario && teoremaActivo === 'segundo-teorema') {
+      try {
+        escenario.configurarCanvasSegundoTeorema(canvasSegundoTeoremaRef.current)
+        console.log('✅ Canvas Segundo Teorema configurado')
+      } catch (error) {
+        console.error('❌ Error configurando canvas Segundo Teorema:', error)
+      }
+    }
+  }, [escenario, teoremaActivo, canvasSegundoTeoremaRef.current])
+
+  // ✅ RENDERIZAR SEGUNDO TEOREMA CUANDO CAMBIEN LOS PARÁMETROS
+  useEffect(() => {
+    console.log('🔄 useEffect Segundo Teorema ejecutado:', {
+      escenario: !!escenario,
+      teoremaActivo,
+      tabActivo,
+      funcionSegundoTeorema,
+      limiteASegundoTeorema,
+      limiteBSegundoTeorema,
+      funcionPersonalizadaSegundoTeorema
+    })
+    
+    if (escenario && teoremaActivo === 'segundo-teorema' && tabActivo === 'visualizacion') {
+      try {
+        console.log('🎨 Intentando renderizar Segundo Teorema...')
+        escenario.renderizarSegundoTeorema()
+        console.log('✅ Segundo Teorema renderizado exitosamente')
+      } catch (error) {
+        console.error('❌ Error renderizando Segundo Teorema:', error)
+      }
+    }
+  }, [escenario, teoremaActivo, tabActivo, funcionSegundoTeorema, limiteASegundoTeorema, limiteBSegundoTeorema, funcionPersonalizadaSegundoTeorema])
 
   // ✅ RENDERIZAR CUANDO CAMBIEN LOS PARÁMETROS
   useEffect(() => {
@@ -222,7 +275,7 @@ function TorreValorMedioDemo() {
         if (isEstimating) {
           updateEstimation(x)
         } else {
-          startEstimation(x)
+        startEstimation(x)
         }
         console.log(`🎯 Estimación colocada en torre: ${x}`)
       }
@@ -407,6 +460,137 @@ function TorreValorMedioDemo() {
     if (error < 1.0) return { nivel: 'Regular', emoji: '⚠️', color: 'bg-orange-100 text-orange-800' }
     return { nivel: 'Intenta', emoji: '🔄', color: 'bg-red-100 text-red-800' }
   }
+
+  // ========================================
+  // MÉTODOS PARA EL SEGUNDO TEOREMA FUNDAMENTAL
+  // ========================================
+
+  // ✅ MANEJAR CAMBIO DE TEOREMA
+  const handleCambioTeorema = useCallback((teorema: string) => {
+    setTeoremaActivo(teorema)
+    if (teorema === 'segundo-teorema') {
+      setTabActivo('teoria')
+    } else {
+      setTabActivo('visualizacion')
+    }
+  }, [])
+
+  // ✅ MANEJAR FUNCIÓN SEGUNDO TEOREMA
+  const handleFuncionSegundoTeorema = useCallback((tipo: string) => {
+    setFuncionSegundoTeorema(tipo)
+    if (escenario) {
+      escenario.cambiarTeoremaActivo('segundo-teorema')
+      if (tipo === 'personalizada') {
+        // Para función personalizada, no establecer función aún hasta que sea válida
+        setMostrarTecladoSegundoTeorema(true)
+      } else {
+        escenario.establecerFuncionSegundoTeorema(tipo, '')
+        setMostrarTecladoSegundoTeorema(false)
+      }
+    }
+  }, [escenario])
+
+  // ✅ MANEJAR FUNCIÓN PERSONALIZADA SEGUNDO TEOREMA
+  const handleFuncionPersonalizadaSegundoTeorema = useCallback((funcion: string) => {
+    setFuncionPersonalizadaSegundoTeorema(funcion)
+    setErrorFuncionPersonalizadaSegundoTeorema('')
+    
+    if (escenario && funcion.trim()) {
+      try {
+        // Validar sintaxis básica
+        const testFunc = new Function('x', `return ${funcion}`)
+        const testValue = testFunc(1)
+        
+        if (!isFinite(testValue)) {
+          setErrorFuncionPersonalizadaSegundoTeorema('La función produce valores no finitos')
+          return
+        }
+        
+        // Establecer la función personalizada
+        escenario.establecerFuncionSegundoTeorema('personalizada', funcion)
+        setErrorFuncionPersonalizadaSegundoTeorema('')
+      } catch (error) {
+        setErrorFuncionPersonalizadaSegundoTeorema('Sintaxis inválida en la función')
+      }
+    }
+  }, [escenario])
+
+  // ✅ MANEJAR LÍMITES SEGUNDO TEOREMA
+  const handleLimitesSegundoTeorema = useCallback((a: number, b: number) => {
+    setLimiteASegundoTeorema(a)
+    setLimiteBSegundoTeorema(b)
+    if (escenario) {
+      escenario.establecerLimitesSegundoTeorema(a, b)
+    }
+  }, [escenario])
+
+  // ✅ VALIDAR ANTIDERIVADA
+  const handleValidarAntiderivada = useCallback(() => {
+    if (escenario && antiderivadaUsuario) {
+      const validacion = escenario.validarAntiderivada(antiderivadaUsuario)
+      if (validacion.valida) {
+        setErrorAntiderivada('')
+        escenario.establecerAntiderivadaUsuario(antiderivadaUsuario)
+        escenario.avanzarPasoSegundoTeorema()
+        setPasoActualSegundoTeorema(2)
+      } else {
+        setErrorAntiderivada(validacion.error)
+      }
+    }
+  }, [escenario, antiderivadaUsuario])
+
+  // ✅ VALIDAR EVALUACIÓN LÍMITES
+  const handleValidarEvaluacion = useCallback(() => {
+    if (escenario && evaluacionA && evaluacionB) {
+      const validacion = escenario.validarEvaluacionLimites(evaluacionA, evaluacionB)
+      if (validacion.valida) {
+        setErrorEvaluacion('')
+        escenario.establecerEvaluacionLimites(evaluacionA, evaluacionB)
+        escenario.avanzarPasoSegundoTeorema()
+        setPasoActualSegundoTeorema(3)
+      } else {
+        setErrorEvaluacion(validacion.error)
+      }
+    }
+  }, [escenario, evaluacionA, evaluacionB])
+
+  // ✅ CALCULAR RESULTADO INTEGRAL
+  const handleCalcularResultado = useCallback(() => {
+    if (escenario) {
+      const resultado = escenario.calcularResultadoIntegral()
+      if (resultado.exitosa) {
+        setResultadoIntegral(resultado.resultado)
+        escenario.avanzarPasoSegundoTeorema()
+        setPasoActualSegundoTeorema(4)
+      }
+    }
+  }, [escenario])
+
+  // ✅ CARGAR EJEMPLO SEGUNDO TEOREMA
+  const handleCargarEjemploSegundoTeorema = useCallback((ejemplo: any) => {
+    if (escenario) {
+      escenario.cambiarTeoremaActivo('segundo-teorema')
+      escenario.cargarEjemploSegundoTeorema(ejemplo)
+      setFuncionSegundoTeorema(ejemplo.tipoFuncion || 'seno')
+      setLimiteASegundoTeorema(ejemplo.limiteA)
+      setLimiteBSegundoTeorema(ejemplo.limiteB)
+      setTabActivo('visualizacion')
+    }
+  }, [escenario])
+
+  // ✅ RESETEAR SEGUNDO TEOREMA
+  const handleResetearSegundoTeorema = useCallback(() => {
+    if (escenario) {
+      escenario.resetearSegundoTeorema()
+      setAntiderivadaUsuario('')
+      setEvaluacionA('')
+      setEvaluacionB('')
+      setResultadoIntegral(0)
+      setPasoActualSegundoTeorema(1)
+      setErrorAntiderivada('')
+      setErrorEvaluacion('')
+    }
+  }, [escenario])
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 p-4">
@@ -422,7 +606,7 @@ function TorreValorMedioDemo() {
         </div>
         
         {/* Navegación principal de teoremas */}
-        <Tabs value={teoremaActivo} onValueChange={setTeoremaActivo} className="mb-6">
+        <Tabs value={teoremaActivo} onValueChange={handleCambioTeorema} className="mb-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="valor-medio" className="flex items-center gap-2">
               <Calculator className="h-4 w-4" />
@@ -454,67 +638,67 @@ function TorreValorMedioDemo() {
               </TabsList>
               
               {/* Pestaña de Teoría del Valor Medio */}
-              <TabsContent value="teoria" className="space-y-6">
+          <TabsContent value="teoria" className="space-y-6">
                 <div ref={containerTooltipRef} className="min-h-[600px] bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200 shadow-sm">
-                  {/* El contenido se renderiza dinámicamente por RenderizadorTeoria.js */}
-                </div>
-              </TabsContent>
-              
+              {/* El contenido se renderiza dinámicamente por RenderizadorTeoria.js */}
+            </div>
+          </TabsContent>
+          
               {/* Pestaña de Ejemplos del Valor Medio */}
-              <TabsContent value="ejemplos" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Lightbulb className="h-5 w-5" />
-                      Ejemplos Mágicos
-                    </CardTitle>
-                    <CardDescription>
-                      Haz clic en un ejemplo para cargarlo y explorar cómo funciona el teorema
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {ejemplos.map((ejemplo) => (
-                        <Card key={ejemplo.id} className="p-4 hover:shadow-md transition-shadow">
-                          <div className="flex items-start gap-3">
-                            <div className="text-blue-600 text-xl">*</div>
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-gray-800 mb-1">
-                                {ejemplo.titulo}
-                              </h3>
-                              <p className="text-sm text-gray-600 mb-2">
-                                {ejemplo.descripcion}
-                              </p>
-                              <div className="text-sm text-gray-700 mb-2">
-                                <strong>Función:</strong> {ejemplo.funcion}
-                              </div>
-                              <div className="text-sm text-gray-700 mb-2">
-                                <strong>Intervalo:</strong> [{ejemplo.limiteA}, {ejemplo.limiteB}]
-                              </div>
-                              <div className="text-sm text-gray-700 mb-2">
-                                <strong>Valor de c:</strong> {ejemplo.puntoC}
-                              </div>
-                              <div className="bg-yellow-50 p-2 rounded text-sm text-yellow-800 mb-3">
-                                {ejemplo.insight}
-                              </div>
-                              <Button 
-                                onClick={() => handleCargarEjemplo(ejemplo)}
-                                className="w-full"
-                                size="sm"
-                              >
-                                Cargar ejemplo
-                              </Button>
-                            </div>
+          <TabsContent value="ejemplos" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lightbulb className="h-5 w-5" />
+                  Ejemplos Mágicos
+                </CardTitle>
+                <CardDescription>
+                  Haz clic en un ejemplo para cargarlo y explorar cómo funciona el teorema
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {ejemplos.map((ejemplo) => (
+                    <Card key={ejemplo.id} className="p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-start gap-3">
+                        <div className="text-blue-600 text-xl">*</div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-800 mb-1">
+                            {ejemplo.titulo}
+                          </h3>
+                          <p className="text-sm text-gray-600 mb-2">
+                            {ejemplo.descripcion}
+                          </p>
+                          <div className="text-sm text-gray-700 mb-2">
+                            <strong>Función:</strong> {ejemplo.funcion}
                           </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
+                          <div className="text-sm text-gray-700 mb-2">
+                            <strong>Intervalo:</strong> [{ejemplo.limiteA}, {ejemplo.limiteB}]
+                          </div>
+                          <div className="text-sm text-gray-700 mb-2">
+                            <strong>Valor de c:</strong> {ejemplo.puntoC}
+                          </div>
+                          <div className="bg-yellow-50 p-2 rounded text-sm text-yellow-800 mb-3">
+                            {ejemplo.insight}
+                          </div>
+                          <Button 
+                            onClick={() => handleCargarEjemplo(ejemplo)}
+                            className="w-full"
+                            size="sm"
+                          >
+                            Cargar ejemplo
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
               {/* Pestaña de Visualización del Valor Medio */}
-              <TabsContent value="visualizacion" className="space-y-6">
+          <TabsContent value="visualizacion" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Panel de Controles */}
               <div className="space-y-4">
@@ -1002,120 +1186,667 @@ function TorreValorMedioDemo() {
               
               {/* Pestaña de Teoría del Segundo Teorema */}
               <TabsContent value="teoria" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-2xl flex items-center gap-2">
-                      <Calculator className="h-6 w-6" />
-                      Segundo Teorema Fundamental del Cálculo
-                    </CardTitle>
-                    <CardDescription>
-                      La conexión entre derivadas e integrales definidas
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <h3 className="text-lg font-semibold text-blue-800 mb-2">Enunciado del Teorema</h3>
-                      <p className="text-blue-700 mb-3">
-                        Si f es continua en [a, b] y F(x) = ∫[a,x] f(t) dt, entonces F'(x) = f(x) para todo x en [a, b].
-                      </p>
-                      <div className="bg-white p-3 rounded border-l-4 border-blue-500">
-                        <code className="text-sm font-mono">
-                          d/dx [∫[a,x] f(t) dt] = f(x)
-                        </code>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Interpretación Geométrica</h3>
-                        <ul className="space-y-2 text-sm">
-                          <li className="flex items-start gap-2">
-                            <span className="text-blue-500 mt-1">•</span>
-                            <span>La derivada de la integral es la función original</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-blue-500 mt-1">•</span>
-                            <span>Conecta el área bajo la curva con la pendiente</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-blue-500 mt-1">•</span>
-                            <span>Fundamental para el cálculo de integrales</span>
-                          </li>
-                        </ul>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Aplicaciones</h3>
-                        <ul className="space-y-2 text-sm">
-                          <li className="flex items-start gap-2">
-                            <span className="text-green-500 mt-1">•</span>
-                            <span>Cálculo de integrales definidas</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-green-500 mt-1">•</span>
-                            <span>Resolución de ecuaciones diferenciales</span>
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-green-500 mt-1">•</span>
-                            <span>Análisis de funciones acumulativas</span>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-yellow-50 p-4 rounded-lg">
-                      <h3 className="text-lg font-semibold text-yellow-800 mb-2">Ejemplo Práctico</h3>
-                      <p className="text-yellow-700 mb-3">
-                        Si f(x) = x², entonces F(x) = ∫[0,x] t² dt = x³/3
-                      </p>
-                      <p className="text-yellow-700">
-                        Verificamos: F'(x) = d/dx[x³/3] = x² = f(x) ✓
-                      </p>
-                    </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl flex items-center gap-2">
+                  <Calculator className="h-6 w-6" />
+                  Segundo Teorema Fundamental del Cálculo
+                </CardTitle>
+                <CardDescription>
+                  La conexión entre derivadas e integrales definidas
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-blue-800 mb-2">Enunciado del Teorema</h3>
+                  <p className="text-blue-700 mb-3">
+                    Si f es continua en [a, b] y F(x) = ∫[a,x] f(t) dt, entonces F'(x) = f(x) para todo x en [a, b].
+                  </p>
+                  <div className="bg-white p-3 rounded border-l-4 border-blue-500">
+                    <code className="text-sm font-mono">
+                      d/dx [∫[a,x] f(t) dt] = f(x)
+                    </code>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Interpretación Geométrica</h3>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-500 mt-1">•</span>
+                        <span>La derivada de la integral es la función original</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-500 mt-1">•</span>
+                        <span>Conecta el área bajo la curva con la pendiente</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-500 mt-1">•</span>
+                        <span>Fundamental para el cálculo de integrales</span>
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Aplicaciones</h3>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-500 mt-1">•</span>
+                        <span>Cálculo de integrales definidas</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-500 mt-1">•</span>
+                        <span>Resolución de ecuaciones diferenciales</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-500 mt-1">•</span>
+                        <span>Análisis de funciones acumulativas</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-yellow-800 mb-2">Ejemplo Práctico</h3>
+                  <p className="text-yellow-700 mb-3">
+                    Si f(x) = x², entonces F(x) = ∫[0,x] t² dt = x³/3
+                  </p>
+                  <p className="text-yellow-700">
+                    Verificamos: F'(x) = d/dx[x³/3] = x² = f(x) ✓
+                  </p>
+                </div>
                   </CardContent>
                 </Card>
               </TabsContent>
               
               {/* Pestaña de Visualizaciones del Segundo Teorema */}
               <TabsContent value="visualizacion" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Visualizaciones del Segundo Teorema</CardTitle>
-                    <CardDescription>
-                      Esta sección estará disponible próximamente
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="bg-gray-50 p-8 rounded-lg text-center">
-                      <Calculator className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-600 mb-2">Próximamente</h3>
-                      <p className="text-gray-500">
-                        Las visualizaciones interactivas del Segundo Teorema Fundamental del Cálculo estarán disponibles en futuras actualizaciones.
-                      </p>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Panel de Controles del Segundo Teorema */}
+                  <div className="space-y-4">
+                    {/* Controles Interactivos */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Controles del Segundo Teorema</CardTitle>
+                        <CardDescription>
+                          Configura la función y los límites de integración
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {/* Límites */}
+                        <div className="space-y-3">
+                          <label className="text-sm font-medium">Límite inferior a = {limiteASegundoTeorema.toFixed(1)}</label>
+                          <Slider
+                            value={[limiteASegundoTeorema]}
+                            onValueChange={(value) => handleLimitesSegundoTeorema(value[0], limiteBSegundoTeorema)}
+                            min={-4}
+                            max={4}
+                            step={0.1}
+                            className="w-full"
+                          />
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <label className="text-sm font-medium">Límite superior b = {limiteBSegundoTeorema.toFixed(1)}</label>
+                          <Slider
+                            value={[limiteBSegundoTeorema]}
+                            onValueChange={(value) => handleLimitesSegundoTeorema(limiteASegundoTeorema, value[0])}
+                            min={-4}
+                            max={4}
+                            step={0.1}
+                            className="w-full"
+                          />
+                        </div>
+                        
+                        {/* Tipo de función */}
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Tipo de función</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              variant={funcionSegundoTeorema === 'seno' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => handleFuncionSegundoTeorema('seno')}
+                            >
+                              sin(x)
+                            </Button>
+                            <Button
+                              variant={funcionSegundoTeorema === 'coseno' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => handleFuncionSegundoTeorema('coseno')}
+                            >
+                              cos(x)
+                            </Button>
+                            <Button
+                              variant={funcionSegundoTeorema === 'exponencial' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => handleFuncionSegundoTeorema('exponencial')}
+                            >
+                              e^x
+                            </Button>
+                            <Button
+                              variant={funcionSegundoTeorema === 'personalizada' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => handleFuncionSegundoTeorema('personalizada')}
+                            >
+                              f(x)
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Objetivo Principal */}
+                    <div className="bg-purple-100 p-4 rounded-lg mb-4">
+                      <h3 className="text-lg font-semibold text-purple-800 mb-2">
+                        🎯 Objetivo: Usa el Segundo Teorema Fundamental para calcular la integral
+                      </h3>
                     </div>
-                  </CardContent>
-                </Card>
+
+                    {/* Paso 1: Función dada */}
+                    <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                      <h3 className="text-lg font-semibold text-blue-800 mb-2">Paso 1: Función dada</h3>
+                      <div className="text-center">
+                        <div className="text-2xl font-mono mb-2">
+                          f(x) = {funcionSegundoTeorema === 'seno' ? 'sin(x)' : 
+                                 funcionSegundoTeorema === 'coseno' ? 'cos(x)' :
+                                 funcionSegundoTeorema === 'exponencial' ? 'e^x' : 
+                                 funcionSegundoTeorema === 'personalizada' ? (funcionPersonalizadaSegundoTeorema || 'f(x)') : 'sin(x)'}
+                        </div>
+                        <div className="text-gray-600">
+                          Queremos calcular: ∫[{limiteASegundoTeorema.toFixed(1)} → {limiteBSegundoTeorema.toFixed(1)}] f(x)dx
+                        </div>
+                        
+                        {/* Entrada de función personalizada */}
+                        {funcionSegundoTeorema === 'personalizada' && (
+                          <div className="mt-4 space-y-2">
+                            <label className="text-sm font-medium">Ingresa tu función personalizada:</label>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={funcionPersonalizadaSegundoTeorema}
+                                onChange={(e) => handleFuncionPersonalizadaSegundoTeorema(e.target.value)}
+                                placeholder="Ej: x**2 + 3*x + 1"
+                                className="flex-1 p-2 border rounded text-sm"
+                              />
+                              <Button
+                                onClick={() => setMostrarTecladoSegundoTeorema(!mostrarTecladoSegundoTeorema)}
+                                variant="outline"
+                                size="sm"
+                              >
+                                {mostrarTecladoSegundoTeorema ? "Ocultar" : "Mostrar"} Teclado
+                              </Button>
+                            </div>
+                            
+                            {errorFuncionPersonalizadaSegundoTeorema && (
+                              <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                                {errorFuncionPersonalizadaSegundoTeorema}
+                              </div>
+                            )}
+                            
+                            {/* Teclado Matemático para función personalizada */}
+                            {mostrarTecladoSegundoTeorema && (
+                              <div className="bg-gray-50 p-4 rounded-lg mt-2">
+                                <h4 className="text-sm font-medium mb-2">Teclado Matemático</h4>
+                                <div className="grid grid-cols-6 gap-2">
+                                  {/* Números */}
+                                  {['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].map(num => (
+                                    <Button
+                                      key={num}
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setFuncionPersonalizadaSegundoTeorema(prev => prev + num)}
+                                      className="text-xs"
+                                    >
+                                      {num}
+                                    </Button>
+                                  ))}
+                                  
+                                  {/* Operaciones */}
+                                  {['+', '-', '*', '/', '^', '(', ')'].map(op => (
+                                    <Button
+                                      key={op}
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setFuncionPersonalizadaSegundoTeorema(prev => prev + op)}
+                                      className="text-xs"
+                                    >
+                                      {op}
+                                    </Button>
+                                  ))}
+                                  
+                                  {/* Funciones */}
+                                  {['sin', 'cos', 'tan', 'log', 'exp', 'sqrt'].map(func => (
+                                    <Button
+                                      key={func}
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setFuncionPersonalizadaSegundoTeorema(prev => prev + func + '(x)')}
+                                      className="text-xs"
+                                    >
+                                      {func}
+                                    </Button>
+                                  ))}
+                                  
+                                  {/* Variable x */}
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setFuncionPersonalizadaSegundoTeorema(prev => prev + 'x')}
+                                    className="text-xs"
+                                  >
+                                    x
+                                  </Button>
+                                  
+                                  {/* Control */}
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setFuncionPersonalizadaSegundoTeorema(prev => prev.slice(0, -1))}
+                                    className="text-xs"
+                                  >
+                                    ←
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setFuncionPersonalizadaSegundoTeorema('')}
+                                    className="text-xs"
+                                  >
+                                    C
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Paso 2: Encuentra la antiderivada */}
+                    <div className="bg-green-50 p-4 rounded-lg mb-4">
+                      <h3 className="text-lg font-semibold text-green-800 mb-2">Paso 2: Encuentra la antiderivada F(x)</h3>
+                      <div className="mb-4">
+                        <div className="text-gray-700 mb-2">
+                          Recuerda: F'(x) = f(x). ¿Qué función al derivarla da {funcionSegundoTeorema === 'seno' ? 'sin(x)' : 
+                                                                                    funcionSegundoTeorema === 'coseno' ? 'cos(x)' :
+                                                                                    funcionSegundoTeorema === 'exponencial' ? 'e^x' : 'f(x)'}?
+                        </div>
+                        <div className="text-sm text-gray-600 mb-2">
+                          {funcionSegundoTeorema === 'seno' ? 'Ej: -cos(x), -Math.cos(x)' :
+                           funcionSegundoTeorema === 'coseno' ? 'Ej: sin(x), Math.sin(x)' :
+                           funcionSegundoTeorema === 'exponencial' ? 'Ej: exp(x), Math.exp(x)' :
+                           'Ej: (x**2)/2, (x**3)/3'}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">F(x) =</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={antiderivadaUsuario}
+                            onChange={(e) => setAntiderivadaUsuario(e.target.value)}
+                            placeholder="Ej: -cos(x)"
+                            className="flex-1 p-2 border rounded text-sm"
+                          />
+                          <Button
+                            onClick={() => setMostrarTecladoSegundoTeorema(!mostrarTecladoSegundoTeorema)}
+                            variant="outline"
+                            size="sm"
+                          >
+                            {mostrarTecladoSegundoTeorema ? "Ocultar" : "Mostrar"} Teclado
+                          </Button>
+                        </div>
+                        
+                        {/* Teclado Matemático */}
+                        {mostrarTecladoSegundoTeorema && (
+                          <div className="bg-gray-50 p-4 rounded-lg mt-2">
+                            <h4 className="text-sm font-medium mb-2">Teclado Matemático</h4>
+                            <div className="grid grid-cols-6 gap-2">
+                              {/* Números */}
+                              {['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].map(num => (
+                                <Button
+                                  key={num}
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setAntiderivadaUsuario(prev => prev + num)}
+                                  className="text-xs"
+                                >
+                                  {num}
+                                </Button>
+                              ))}
+                              
+                              {/* Operaciones */}
+                              {['+', '-', '*', '/', '^', '(', ')'].map(op => (
+                                <Button
+                                  key={op}
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setAntiderivadaUsuario(prev => prev + op)}
+                                  className="text-xs"
+                                >
+                                  {op}
+                                </Button>
+                              ))}
+                              
+                              {/* Funciones */}
+                              {['sin', 'cos', 'tan', 'log', 'exp', 'sqrt'].map(func => (
+                                <Button
+                                  key={func}
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setAntiderivadaUsuario(prev => prev + func + '(x)')}
+                                  className="text-xs"
+                                >
+                                  {func}
+                                </Button>
+                              ))}
+                              
+                              {/* Variable x */}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setAntiderivadaUsuario(prev => prev + 'x')}
+                                className="text-xs"
+                              >
+                                x
+                              </Button>
+                              
+                              {/* Control */}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setAntiderivadaUsuario(prev => prev.slice(0, -1))}
+                                className="text-xs"
+                              >
+                                ←
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setAntiderivadaUsuario('')}
+                                className="text-xs"
+                              >
+                                C
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {errorAntiderivada && (
+                          <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                            {errorAntiderivada}
+                          </div>
+                        )}
+                        
+                        <Button onClick={handleValidarAntiderivada} size="sm" className="w-full">
+                          Confirmar
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Paso 3: Evalúa en los límites */}
+                    <div className="bg-yellow-50 p-4 rounded-lg mb-4">
+                      <h3 className="text-lg font-semibold text-yellow-800 mb-2">Paso 3: Evalúa en los límites</h3>
+                      <div className="mb-4">
+                        <div className="text-gray-700 mb-2">
+                          Calcula F(a) y F(b) usando tu antiderivada F(x) = {antiderivadaUsuario || 'F(x)'}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">F({limiteASegundoTeorema.toFixed(1)}) =</label>
+                          <input
+                            type="text"
+                            value={evaluacionA}
+                            onChange={(e) => setEvaluacionA(e.target.value)}
+                            placeholder={`Ej: F(${limiteASegundoTeorema.toFixed(1)})`}
+                            className="w-full p-2 border rounded text-sm"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">F({limiteBSegundoTeorema.toFixed(1)}) =</label>
+                          <input
+                            type="text"
+                            value={evaluacionB}
+                            onChange={(e) => setEvaluacionB(e.target.value)}
+                            placeholder={`Ej: F(${limiteBSegundoTeorema.toFixed(1)})`}
+                            className="w-full p-2 border rounded text-sm"
+                          />
+                        </div>
+                      </div>
+                      
+                      {errorEvaluacion && (
+                        <div className="text-sm text-red-600 bg-red-50 p-2 rounded mt-2">
+                          {errorEvaluacion}
+                        </div>
+                      )}
+                      
+                      <Button onClick={handleValidarEvaluacion} size="sm" className="w-full mt-2">
+                        Confirmar
+                      </Button>
+                    </div>
+
+                    {/* Paso 4: Calcula la integral */}
+                    <div className="bg-purple-50 p-4 rounded-lg mb-4">
+                      <h3 className="text-lg font-semibold text-purple-800 mb-2">Paso 4: Calcula la integral</h3>
+                      <div className="mb-4">
+                        <div className="text-gray-700 mb-2">
+                          Usa la fórmula: ∫[{limiteASegundoTeorema.toFixed(1)} → {limiteBSegundoTeorema.toFixed(1)}] f(x)dx = F({limiteBSegundoTeorema.toFixed(1)}) - F({limiteASegundoTeorema.toFixed(1)})
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="text-center">
+                          <div className="text-xl font-mono">
+                            ∫[{limiteASegundoTeorema.toFixed(1)} → {limiteBSegundoTeorema.toFixed(1)}] f(x)dx = {evaluacionB} - {evaluacionA}
+                          </div>
+                        </div>
+                        
+                        <div className="text-center">
+                          <div className="text-2xl font-mono">
+                            = {resultadoIntegral.toFixed(4)}
+                          </div>
+                        </div>
+                        
+                        <Button onClick={handleCalcularResultado} size="sm" className="w-full">
+                          Calcular Integral
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Botón Resetear */}
+                    <Button onClick={handleResetearSegundoTeorema} variant="outline" className="w-full">
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Resetear Proceso
+                    </Button>
+                  </div>
+
+                  {/* Gráfica del Segundo Teorema */}
+                  <div className="lg:col-span-2">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Visualización del Segundo Teorema</CardTitle>
+                        <CardDescription>
+                          Gráfica interactiva del área bajo la curva
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="bg-white border rounded-lg p-4">
+                          <canvas
+                            ref={canvasSegundoTeoremaRef}
+                            width={800}
+                            height={400}
+                            className="w-full h-64 border border-gray-300 rounded"
+                            style={{ width: '100%', height: '256px', display: 'block' }}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
               </TabsContent>
               
               {/* Pestaña de Ejemplos del Segundo Teorema */}
               <TabsContent value="ejemplos" className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Ejemplos del Segundo Teorema</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <Lightbulb className="h-5 w-5" />
+                      Ejemplos del Segundo Teorema Fundamental
+                    </CardTitle>
                     <CardDescription>
-                      Esta sección estará disponible próximamente
+                      Haz clic en un ejemplo para cargarlo y explorar el Segundo Teorema Fundamental
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="bg-gray-50 p-8 rounded-lg text-center">
-                      <Lightbulb className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-600 mb-2">Próximamente</h3>
-                      <p className="text-gray-500">
-                        Los ejemplos prácticos del Segundo Teorema Fundamental del Cálculo estarán disponibles en futuras actualizaciones.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Ejemplo 1: Integral de sin(x) */}
+                      <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleCargarEjemploSegundoTeorema({
+                        id: 'seno',
+                        titulo: 'Integral de sin(x)',
+                        descripcion: 'Calcular ∫[0, π] sin(x) dx',
+                        tipoFuncion: 'seno',
+                        limiteA: 0,
+                        limiteB: Math.PI,
+                        resultado: 2
+                      })}>
+                        <div className="flex items-start gap-3">
+                          <div className="text-blue-600 text-xl">∫</div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-800 mb-1">
+                              Integral de sin(x)
+                            </h3>
+                            <p className="text-sm text-gray-600 mb-2">
+                              Calcular ∫[0, π] sin(x) dx usando el Segundo Teorema
+                            </p>
+                            <div className="text-sm text-gray-700 mb-2">
+                              <strong>Función:</strong> sin(x)
+                            </div>
+                            <div className="text-sm text-gray-700 mb-2">
+                              <strong>Intervalo:</strong> [0, π]
+                            </div>
+                            <div className="text-sm text-gray-700 mb-2">
+                              <strong>Resultado:</strong> 2
+                            </div>
+                            <div className="bg-blue-50 p-2 rounded text-sm text-blue-800 mb-3">
+                              La antiderivada de sin(x) es -cos(x)
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+
+                      {/* Ejemplo 2: Integral de cos(x) */}
+                      <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleCargarEjemploSegundoTeorema({
+                        id: 'coseno',
+                        titulo: 'Integral de cos(x)',
+                        descripcion: 'Calcular ∫[0, π/2] cos(x) dx',
+                        tipoFuncion: 'coseno',
+                        limiteA: 0,
+                        limiteB: Math.PI / 2,
+                        resultado: 1
+                      })}>
+                        <div className="flex items-start gap-3">
+                          <div className="text-green-600 text-xl">∫</div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-800 mb-1">
+                              Integral de cos(x)
+                            </h3>
+                            <p className="text-sm text-gray-600 mb-2">
+                              Calcular ∫[0, π/2] cos(x) dx usando el Segundo Teorema
+                            </p>
+                            <div className="text-sm text-gray-700 mb-2">
+                              <strong>Función:</strong> cos(x)
+                            </div>
+                            <div className="text-sm text-gray-700 mb-2">
+                              <strong>Intervalo:</strong> [0, π/2]
+                            </div>
+                            <div className="text-sm text-gray-700 mb-2">
+                              <strong>Resultado:</strong> 1
+                            </div>
+                            <div className="bg-green-50 p-2 rounded text-sm text-green-800 mb-3">
+                              La antiderivada de cos(x) es sin(x)
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+
+                      {/* Ejemplo 3: Integral de e^x */}
+                      <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleCargarEjemploSegundoTeorema({
+                        id: 'exponencial',
+                        titulo: 'Integral de e^x',
+                        descripcion: 'Calcular ∫[0, 1] e^x dx',
+                        tipoFuncion: 'exponencial',
+                        limiteA: 0,
+                        limiteB: 1,
+                        resultado: Math.E - 1
+                      })}>
+                        <div className="flex items-start gap-3">
+                          <div className="text-purple-600 text-xl">∫</div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-800 mb-1">
+                              Integral de e^x
+                            </h3>
+                            <p className="text-sm text-gray-600 mb-2">
+                              Calcular ∫[0, 1] e^x dx usando el Segundo Teorema
+                            </p>
+                            <div className="text-sm text-gray-700 mb-2">
+                              <strong>Función:</strong> e^x
+                            </div>
+                            <div className="text-sm text-gray-700 mb-2">
+                              <strong>Intervalo:</strong> [0, 1]
+                            </div>
+                            <div className="text-sm text-gray-700 mb-2">
+                              <strong>Resultado:</strong> e - 1
+                            </div>
+                            <div className="bg-purple-50 p-2 rounded text-sm text-purple-800 mb-3">
+                              La antiderivada de e^x es e^x
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+
+                      {/* Ejemplo 4: Integral de x² */}
+                      <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleCargarEjemploSegundoTeorema({
+                        id: 'polinomio',
+                        titulo: 'Integral de x²',
+                        descripcion: 'Calcular ∫[0, 2] x² dx',
+                        tipoFuncion: 'personalizada',
+                        funcionPersonalizada: 'x**2',
+                        limiteA: 0,
+                        limiteB: 2,
+                        resultado: 8/3
+                      })}>
+                        <div className="flex items-start gap-3">
+                          <div className="text-orange-600 text-xl">∫</div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-800 mb-1">
+                              Integral de x²
+                            </h3>
+                            <p className="text-sm text-gray-600 mb-2">
+                              Calcular ∫[0, 2] x² dx usando el Segundo Teorema
+                            </p>
+                            <div className="text-sm text-gray-700 mb-2">
+                              <strong>Función:</strong> x²
+                            </div>
+                            <div className="text-sm text-gray-700 mb-2">
+                              <strong>Intervalo:</strong> [0, 2]
+                            </div>
+                            <div className="text-sm text-gray-700 mb-2">
+                              <strong>Resultado:</strong> 8/3
+                            </div>
+                            <div className="bg-orange-50 p-2 rounded text-sm text-orange-800 mb-3">
+                              La antiderivada de x² es x³/3
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                </div>
+              </CardContent>
+            </Card>
               </TabsContent>
             </Tabs>
           </TabsContent>

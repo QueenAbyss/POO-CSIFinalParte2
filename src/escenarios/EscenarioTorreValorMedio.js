@@ -12,15 +12,27 @@ import { GestorTeoria } from '../servicios/GestorTeoria.js'
 import { RenderizadorTorre } from '../presentacion/RenderizadorTorre.js'
 import { RenderizadorCartesianoTorre } from '../presentacion/RenderizadorCartesianoTorre.js'
 
+// Importaciones para el Segundo Teorema
+import { EstadoSegundoTeorema } from '../entidades/EstadoSegundoTeorema.js'
+import { ConfiguracionSegundoTeorema } from '../entidades/ConfiguracionSegundoTeorema.js'
+import { CalculadoraSegundoTeorema } from '../servicios/CalculadoraSegundoTeorema.js'
+import { TeoriaSegundoTeorema } from '../entidades/TeoriaSegundoTeorema.js'
+import { EjemplosSegundoTeorema } from '../entidades/EjemplosSegundoTeorema.js'
+import { RenderizadorSegundoTeorema } from '../presentacion/RenderizadorSegundoTeorema.js'
+
 export class EscenarioTorreValorMedio extends Escenario {
     constructor() {
-        super('Torre del Valor Medio', 'Escenario para el Teorema del Valor Medio')
+        super('Torre del Valor Medio', 'Escenario para el Teorema del Valor Medio y Segundo Teorema Fundamental')
         
-        // Estado y configuración específicos
+        // Estado y configuración específicos del Teorema del Valor Medio
         this.estadoTorre = new EstadoTorreValorMedio()
         this.configuracionTorre = new ConfiguracionTorreValorMedio()
         
-        // Servicios
+        // Estado y configuración específicos del Segundo Teorema
+        this.estadoSegundoTeorema = new EstadoSegundoTeorema()
+        this.configuracionSegundoTeorema = new ConfiguracionSegundoTeorema()
+        
+        // Servicios del Teorema del Valor Medio
         this.calculadora = new CalculadoraValorMedio()
         this.gestorLogros = new GestorLogros()
         this.gestorTeoria = new GestorTeoria()
@@ -30,13 +42,22 @@ export class EscenarioTorreValorMedio extends Escenario {
             this.calculadora
         )
         
-        // Renderizadores
+        // Servicios del Segundo Teorema
+        this.calculadoraSegundoTeorema = new CalculadoraSegundoTeorema()
+        this.teoriaSegundoTeorema = new TeoriaSegundoTeorema()
+        this.ejemplosSegundoTeorema = new EjemplosSegundoTeorema()
+        
+        // Renderizadores del Teorema del Valor Medio
         this.renderizadorTorre = null
         this.renderizadorCartesiano = null
+        
+        // Renderizadores del Segundo Teorema
+        this.renderizadorSegundoTeorema = null
         
         // Estado de inicialización
         this.inicializado = false
         this.canvasConfigurado = false
+        this.teoremaActivo = 'valor-medio' // 'valor-medio' o 'segundo-teorema'
     }
 
     // ✅ INICIALIZAR ESCENARIO
@@ -358,15 +379,298 @@ export class EscenarioTorreValorMedio extends Escenario {
         }
     }
 
+    // ========================================
+    // MÉTODOS PARA EL SEGUNDO TEOREMA FUNDAMENTAL
+    // ========================================
+
+    // ✅ CAMBIAR TEOREMA ACTIVO
+    cambiarTeoremaActivo(teorema) {
+        this.teoremaActivo = teorema
+        return this
+    }
+
+    // ✅ OBTENER TEOREMA ACTIVO
+    obtenerTeoremaActivo() {
+        return this.teoremaActivo
+    }
+
+    // ✅ CONFIGURAR CANVAS SEGUNDO TEOREMA
+    configurarCanvasSegundoTeorema(canvasSegundoTeorema) {
+        console.log('🎨 configurarCanvasSegundoTeorema ejecutado')
+        console.log('- canvasSegundoTeorema:', !!canvasSegundoTeorema)
+        console.log('- inicializado:', this.inicializado)
+        
+        try {
+            if (!this.inicializado) {
+                throw new Error('El escenario debe estar inicializado antes de configurar canvas')
+            }
+            
+            console.log('✅ Creando RenderizadorSegundoTeorema...')
+            this.renderizadorSegundoTeorema = new RenderizadorSegundoTeorema(canvasSegundoTeorema)
+            console.log('✅ RenderizadorSegundoTeorema creado:', !!this.renderizadorSegundoTeorema)
+            return this
+        } catch (error) {
+            console.error('❌ Error configurando canvas Segundo Teorema:', error)
+            throw error
+        }
+    }
+
+    // ✅ ESTABLECER FUNCIÓN SEGUNDO TEOREMA
+    establecerFuncionSegundoTeorema(tipo, funcionPersonalizada = '') {
+        try {
+            this.estadoSegundoTeorema.establecerFuncion(tipo, funcionPersonalizada)
+            this.renderizarSegundoTeorema()
+            return this
+        } catch (error) {
+            console.error('Error estableciendo función Segundo Teorema:', error)
+            throw error
+        }
+    }
+
+    // ✅ ESTABLECER LÍMITES SEGUNDO TEOREMA
+    establecerLimitesSegundoTeorema(a, b) {
+        try {
+            this.estadoSegundoTeorema.establecerLimites(a, b)
+            this.renderizarSegundoTeorema()
+            return this
+        } catch (error) {
+            console.error('Error estableciendo límites Segundo Teorema:', error)
+            throw error
+        }
+    }
+
+    // ✅ ESTABLECER ANTIDERIVADA USUARIO
+    establecerAntiderivadaUsuario(antiderivada) {
+        try {
+            this.estadoSegundoTeorema.establecerAntiderivadaUsuario(antiderivada)
+            return this
+        } catch (error) {
+            console.error('Error estableciendo antiderivada usuario:', error)
+            throw error
+        }
+    }
+
+    // ✅ VALIDAR ANTIDERIVADA
+    validarAntiderivada(antiderivadaUsuario) {
+        try {
+            const funcion = this.estadoSegundoTeorema.obtenerFuncionActual()
+            if (!funcion) {
+                return { valida: false, error: 'No hay función definida' }
+            }
+            
+            return this.calculadoraSegundoTeorema.validarAntiderivada(antiderivadaUsuario, funcion)
+        } catch (error) {
+            console.error('Error validando antiderivada:', error)
+            return { valida: false, error: 'Error en la validación' }
+        }
+    }
+
+    // ✅ AVANZAR PASO SEGUNDO TEOREMA
+    avanzarPasoSegundoTeorema() {
+        try {
+            this.estadoSegundoTeorema.avanzarPaso()
+            this.renderizarSegundoTeorema()
+            return this
+        } catch (error) {
+            console.error('Error avanzando paso Segundo Teorema:', error)
+            throw error
+        }
+    }
+
+    // ✅ ESTABLECER EVALUACIÓN LÍMITES
+    establecerEvaluacionLimites(evaluacionA, evaluacionB) {
+        try {
+            this.estadoSegundoTeorema.establecerEvaluacion(evaluacionA, evaluacionB)
+            return this
+        } catch (error) {
+            console.error('Error estableciendo evaluación límites:', error)
+            throw error
+        }
+    }
+
+    // ✅ VALIDAR EVALUACIÓN LÍMITES
+    validarEvaluacionLimites(evaluacionA, evaluacionB) {
+        try {
+            const antiderivada = this.estadoSegundoTeorema.obtenerAntiderivadaUsuario()
+            const limites = this.estadoSegundoTeorema.obtenerLimites()
+            
+            return this.calculadoraSegundoTeorema.validarEvaluacionLimites(
+                evaluacionA, 
+                evaluacionB, 
+                antiderivada, 
+                limites.a, 
+                limites.b
+            )
+        } catch (error) {
+            console.error('Error validando evaluación límites:', error)
+            return { valida: false, error: 'Error en la validación' }
+        }
+    }
+
+    // ✅ CALCULAR RESULTADO INTEGRAL
+    calcularResultadoIntegral() {
+        try {
+            const antiderivada = this.estadoSegundoTeorema.obtenerAntiderivadaUsuario()
+            const limites = this.estadoSegundoTeorema.obtenerLimites()
+            
+            const resultado = this.calculadoraSegundoTeorema.evaluarAntiderivadaEnLimites(
+                antiderivada, 
+                limites.a, 
+                limites.b
+            )
+            
+            if (resultado.exitosa) {
+                this.estadoSegundoTeorema.establecerResultadoCalculado(resultado.resultado)
+                this.estadoSegundoTeorema.completarProceso()
+            }
+            
+            return resultado
+        } catch (error) {
+            console.error('Error calculando resultado integral:', error)
+            return { exitosa: false, error: 'Error en el cálculo', resultado: 0 }
+        }
+    }
+
+    // ✅ RENDERIZAR SEGUNDO TEOREMA
+    renderizarSegundoTeorema() {
+        console.log('🎨 renderizarSegundoTeorema ejecutado')
+        console.log('- renderizadorSegundoTeorema:', !!this.renderizadorSegundoTeorema)
+        
+        if (!this.renderizadorSegundoTeorema) {
+            console.log('❌ No hay renderizador Segundo Teorema')
+            return
+        }
+        
+        try {
+            const funcion = this.estadoSegundoTeorema.obtenerFuncionActual()
+            const limites = this.estadoSegundoTeorema.obtenerLimites()
+            const resultado = this.estadoSegundoTeorema.obtenerResultadoCalculado()
+            
+            console.log('📊 Datos para renderizado:', {
+                funcion: !!funcion,
+                limites,
+                resultado
+            })
+            
+            if (funcion) {
+                const xMin = Math.min(limites.a, limites.b) - 1
+                const xMax = Math.max(limites.a, limites.b) + 1
+                const yMin = -3
+                const yMax = 3
+                
+                console.log('📐 Parámetros de renderizado:', {
+                    xMin, xMax, yMin, yMax,
+                    limiteA: limites.a,
+                    limiteB: limites.b
+                })
+                
+                this.renderizadorSegundoTeorema.renderizarVisualizacionCompleta(
+                    funcion, 
+                    limites.a, 
+                    limites.b, 
+                    xMin, 
+                    xMax, 
+                    yMin, 
+                    yMax, 
+                    resultado
+                )
+                
+                console.log('✅ Renderizado Segundo Teorema completado')
+            } else {
+                console.log('❌ No hay función definida')
+            }
+        } catch (error) {
+            console.error('❌ Error renderizando Segundo Teorema:', error)
+        }
+    }
+
+    // ✅ CARGAR EJEMPLO SEGUNDO TEOREMA
+    cargarEjemploSegundoTeorema(ejemplo) {
+        try {
+            this.estadoSegundoTeorema.establecerFuncion(ejemplo.tipoFuncion || 'seno', ejemplo.funcionPersonalizada || '')
+            this.estadoSegundoTeorema.establecerLimites(ejemplo.limiteA, ejemplo.limiteB)
+            this.renderizarSegundoTeorema()
+            return this
+        } catch (error) {
+            console.error('Error cargando ejemplo Segundo Teorema:', error)
+            throw error
+        }
+    }
+
+    // ✅ RESETEAR SEGUNDO TEOREMA
+    resetearSegundoTeorema() {
+        try {
+            this.estadoSegundoTeorema.resetear()
+            this.renderizarSegundoTeorema()
+            return this
+        } catch (error) {
+            console.error('Error reseteando Segundo Teorema:', error)
+            throw error
+        }
+    }
+
+    // ✅ OBTENER ESTADO SEGUNDO TEOREMA
+    obtenerEstadoSegundoTeorema() {
+        return this.estadoSegundoTeorema
+    }
+
+    // ✅ OBTENER CONFIGURACIÓN SEGUNDO TEOREMA
+    obtenerConfiguracionSegundoTeorema() {
+        return this.configuracionSegundoTeorema
+    }
+
+    // ✅ OBTENER TEORÍA SEGUNDO TEOREMA
+    obtenerTeoriaSegundoTeorema() {
+        return this.teoriaSegundoTeorema.obtenerInformacionCompleta()
+    }
+
+    // ✅ OBTENER EJEMPLOS SEGUNDO TEOREMA
+    obtenerEjemplosSegundoTeorema() {
+        return this.ejemplosSegundoTeorema.obtenerTodosLosEjemplos()
+    }
+
+    // ✅ OBTENER EJEMPLO SEGUNDO TEOREMA
+    obtenerEjemploSegundoTeorema(id) {
+        return this.ejemplosSegundoTeorema.obtenerEjemplo(id)
+    }
+
+    // ✅ OBTENER INFORMACIÓN TEOREMA SEGÚN ACTIVO
+    obtenerInformacionTeoremaActivo() {
+        if (this.teoremaActivo === 'segundo-teorema') {
+            return this.obtenerTeoriaSegundoTeorema()
+        } else {
+            return this.obtenerInformacionTeorema()
+        }
+    }
+
+    // ✅ OBTENER EJEMPLOS TEOREMA SEGÚN ACTIVO
+    obtenerEjemplosTeoremaActivo() {
+        if (this.teoremaActivo === 'segundo-teorema') {
+            return this.obtenerEjemplosSegundoTeorema()
+        } else {
+            return this.obtenerEjemplos()
+        }
+    }
+
     // ✅ DESTRUIR ESCENARIO
     destruir() {
         try {
+            // Destruir componentes del Teorema del Valor Medio
             this.renderizadorTorre = null
             this.renderizadorCartesiano = null
             this.gestorVisualizacion = null
             this.calculadora = null
             this.estadoTorre = null
             this.configuracionTorre = null
+            
+            // Destruir componentes del Segundo Teorema
+            this.renderizadorSegundoTeorema = null
+            this.calculadoraSegundoTeorema = null
+            this.teoriaSegundoTeorema = null
+            this.ejemplosSegundoTeorema = null
+            this.estadoSegundoTeorema = null
+            this.configuracionSegundoTeorema = null
+            
             this.inicializado = false
             this.canvasConfigurado = false
         } catch (error) {
