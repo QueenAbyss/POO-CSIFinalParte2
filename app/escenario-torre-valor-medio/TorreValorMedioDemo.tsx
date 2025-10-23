@@ -122,6 +122,7 @@ function TorreValorMedioDemo() {
   // ✅ RENDERIZAR CUANDO CAMBIEN LOS PARÁMETROS
   useEffect(() => {
     if (escenario && !estaRenderizando) {
+      console.log('🎨 Renderizando con estimación:', estimacionUsuario)
       renderizarCompleto()
     }
   }, [funcionActual, limiteA, limiteB, estimacionUsuario, puntoCReal, escenario, renderizarCompleto, estaRenderizando])
@@ -234,6 +235,16 @@ function TorreValorMedioDemo() {
         const exitosa = verificarEstimacion()
         // Marcar como verificado para bloquear reposicionamiento
         verifyEstimation()
+        
+        // Forzar actualización del estado después de la verificación
+        setTimeout(() => {
+          if (escenario) {
+            const nuevoEstado = escenario.obtenerEstado()
+            // Los estados se actualizarán automáticamente a través del useEffect
+            console.log('🔄 Estado actualizado después de verificación')
+          }
+        }, 100)
+        
         console.log(`✅ Verificación: ${exitosa ? 'Exitosa' : 'Fallida'}`)
         
         // Verificar logros después de la verificación
@@ -243,7 +254,7 @@ function TorreValorMedioDemo() {
         }
       }
     }
-  }, [estimacionUsuario, calcularPuntoCReal, verificarEstimacion, verifyEstimation, verificarLogros])
+  }, [estimacionUsuario, calcularPuntoCReal, verificarEstimacion, verifyEstimation, verificarLogros, escenario])
 
   // ✅ MANEJAR FUNCIÓN PERSONALIZADA
   const handleFuncionPersonalizada = useCallback((func: string) => {
@@ -334,6 +345,7 @@ function TorreValorMedioDemo() {
     if (error < 0.1) return { nivel: 'Perfecto', emoji: '🎯', color: 'bg-green-100 text-green-800' }
     if (error < 0.3) return { nivel: 'Excelente', emoji: '✨', color: 'bg-blue-100 text-blue-800' }
     if (error < 0.6) return { nivel: 'Bueno', emoji: '👍', color: 'bg-yellow-100 text-yellow-800' }
+    if (error < 1.0) return { nivel: 'Regular', emoji: '⚠️', color: 'bg-orange-100 text-orange-800' }
     return { nivel: 'Intenta', emoji: '🔄', color: 'bg-red-100 text-red-800' }
   }
   
@@ -862,7 +874,18 @@ function TorreValorMedioDemo() {
                           <div>
                             <span className="font-medium">Precisión:</span>
                             <span className="ml-2 text-green-600">
-                              {((1 - errorEstimacion / Math.abs(puntoCReal)) * 100).toFixed(1)}%
+                              {(() => {
+                                if (Math.abs(puntoCReal) < 0.001) {
+                                  // Si el punto c real es muy cercano a 0, usar una escala diferente
+                                  if (errorEstimacion < 0.1) return '100.0%'
+                                  if (errorEstimacion < 0.3) return '90.0%'
+                                  if (errorEstimacion < 0.6) return '70.0%'
+                                  if (errorEstimacion < 1.0) return '50.0%'
+                                  return `${Math.max(0, (1 - errorEstimacion) * 100).toFixed(1)}%`
+                                }
+                                const precision = Math.max(0, (1 - errorEstimacion / Math.abs(puntoCReal)) * 100)
+                                return precision.toFixed(1) + '%'
+                              })()}
                             </span>
                           </div>
                         </div>

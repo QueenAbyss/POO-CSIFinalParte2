@@ -345,7 +345,15 @@ export const useTorreValorMedio = (): TorreValorMedioState => {
   const verificarLogros = useCallback(() => {
     if (escenarioRef.current) {
       try {
-        return escenarioRef.current.verificarLogros()
+        const logrosDesbloqueados = escenarioRef.current.verificarLogros()
+        if (logrosDesbloqueados.length > 0) {
+          // Actualizar el estado de logros desbloqueados
+          setLogrosDesbloqueados(prev => {
+            const nuevosLogros = logrosDesbloqueados.filter(logro => !prev.includes(logro.id))
+            return [...prev, ...nuevosLogros.map(logro => logro.id)]
+          })
+        }
+        return logrosDesbloqueados
       } catch (error) {
         console.error('Error verificando logros:', error)
         return []
