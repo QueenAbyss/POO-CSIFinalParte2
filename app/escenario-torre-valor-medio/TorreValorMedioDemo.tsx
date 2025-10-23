@@ -725,47 +725,6 @@ function TorreValorMedioDemo() {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 p-4">
-      <style jsx>{`
-        .step-container {
-          display: none;
-          padding: 20px;
-          border: 2px solid #e0e0e0;
-          border-radius: 8px;
-          margin: 10px 0;
-          background-color: #f9f9f9;
-        }
-        
-        .step-container.active {
-          display: block;
-          border-color: #4CAF50;
-          background-color: #f0fff0;
-        }
-        
-        .feedback {
-          display: none;
-          padding: 10px;
-          border-radius: 4px;
-          margin-top: 10px;
-        }
-        
-        .feedback.success {
-          background-color: #d4edda;
-          color: #155724;
-          border: 1px solid #c3e6cb;
-        }
-        
-        .feedback.error {
-          background-color: #f8d7da;
-          color: #721c24;
-          border: 1px solid #f5c6cb;
-        }
-        
-        .feedback.info {
-          background-color: #d1ecf1;
-          color: #0c5460;
-          border: 1px solid #bee5eb;
-        }
-      `}</style>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
